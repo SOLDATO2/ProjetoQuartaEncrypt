@@ -1,7 +1,9 @@
+import json
 from flask import Flask, request
 import requests
 import hashlib
 import os
+import time
 def calculate_sha256(file_path):
     """Calcula o hash SHA256 de um arquivo."""
     sha256 = hashlib.sha256()
@@ -21,18 +23,43 @@ def send_file_with_name(file_path, target_url):
     response = requests.post(target_url, files=files, data=data)
     return response.text
 
+def verificar_credenciais(usuario, chave, json_data):
+    if json_data.get("usuario") == usuario and json_data.get("chave") == chave:
+        return True
+    return False
+
 app = Flask(__name__)
+
+
+@app.route('/validate_login', methods=['POST'])
+def validar_login():
+    with open("chave.json", 'r') as arquivo:
+        try:
+            json_servidor = json.load(arquivo)
+        except json.JSONDecodeError:
+            print("Erro ao carregar o JSON do arquivo.")
+    
+    json_recipiente = request.json # recebe json do recipiente
+    
+    if verificar_credenciais(json_recipiente['usuario'], json_recipiente['chave'], json_servidor):
+        return "Validado com sucesso"
+    else:
+        return "Acesso negado"
 
 @app.route('/send_file', methods=['POST'])
 def enviar_arquivo():
+    
+        
     if 'file' in request.files:
+            
+            
         # Baixa o arquivo enviado
         file_content = request.files['file'].read().decode('utf-8')
-        
+            
         # Aqui você pode manipular a string conforme necessário
-        
+            
         target_url = 'http://localhost:5001/receive_file'  # URL da rota no Programa 2
-        
+            
         resposta = send_file_with_name(file_content, target_url)
         if resposta == "Recipiente recebeu alguma coisa.":
             print(resposta)
@@ -44,6 +71,11 @@ def enviar_arquivo():
     else:
         print("Arquivo não foi enviado")
         return "Arquivo não foi enviado"
+
+    
+    
+    
+    
     
 @app.route('/receive_sha256', methods=['POST'])
 def receive_sha256():

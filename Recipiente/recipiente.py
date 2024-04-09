@@ -1,8 +1,9 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import socket
 import hashlib
 import os
 import requests
+import json
 
 def find_available_port():
     """Encontra uma porta disponível."""
@@ -79,24 +80,48 @@ def receive_file():
         return "Erro ao receber o arquivo."
 
 
+
+    
+    
+    
+    
+
+
+
 @app.route('/request_file', methods=['GET'])
 def requisitar_arquivo():
-    choice = int(input("Voce gostaria de copiar qual arquivo? \n 1. PDF \n 2. Imagem \n 3. docx \n"))
-    if(choice == 1):
-        file_path = 'big_oh_fest.pdf'
-    elif(choice == 2):
-        file_path = 'images.jpeg'
-    elif(choice == 3):
-        file_path = 'arquivo.docx'
-    target_url = 'http://localhost:5000/send_file'
     
+    usuario = input("Digite o nome de usuario: ")
+    chave = input("Digite a chave de acesso: ")
+    json_ = {
+        "usuario": usuario,
+        "chave": chave
+    }
+    target_url = 'http://localhost:5000/validate_login'
     
-    with open('arquivo_requisitado.txt', 'w') as arquivo:
-        arquivo.write(file_path)
+    response = requests.post(target_url, json=json_)
     
-    print("Arquivo requisitado")
-    requests.post(target_url, files={'file': open('arquivo_requisitado.txt', 'rb')}) #nao consegui enviar apenas o text ent vou mandar um arquivo txt
-    return "Request enviado"
+    if response.text == "Validado com sucesso":
+    
+        choice = int(input("Voce gostaria de copiar qual arquivo? \n 1. PDF \n 2. Imagem \n 3. docx \n"))
+        if(choice == 1):
+            file_path = 'big_oh_fest.pdf'
+        elif(choice == 2):
+            file_path = 'images.jpeg'
+        elif(choice == 3):
+            file_path = 'arquivo.docx'
+        
+        
+        
+        with open('arquivo_requisitado.txt', 'w') as arquivo:
+            arquivo.write(file_path)
+        target_url = 'http://localhost:5000/send_file'
+        print("Arquivo requisitado")
+        requests.post(target_url, files={'file': open('arquivo_requisitado.txt', 'rb')}) #nao consegui enviar apenas o text ent vou mandar um arquivo txt
+        return "Request enviado"
+    else:
+        print("Falha ao efetuar login")
+        return "Falha ao efetuar login"
 
 if __name__ == '__main__':
     #port = find_available_port()
